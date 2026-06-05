@@ -1,16 +1,5 @@
-import { useState } from 'react';
-
-const MOCK_DATA = [
-  { id:1, name:'Sanitär Zenhäusern GmbH', category:'Idraulico / Sanitaire', city:'Naters', zefix:true, google:true, rating:4.2, reviews:18, phone:'+41 27 923 45 67', website:'zenhaeusern-sanitaer.ch', uid:'CHE-112.345.678', since:'2008' },
-  { id:2, name:'Électricité Bonnard Sàrl', category:'Elettricista / Électricien', city:'Sion', zefix:true, google:true, rating:3.8, reviews:6, phone:'+41 27 456 78 90', website:null, uid:'CHE-234.567.890', since:'2015' },
-  { id:3, name:'Imhof Heizung & Lüftung AG', category:'Termoidraulico / Chauffage', city:'Visp', zefix:true, google:false, rating:null, reviews:0, phone:'+41 27 789 01 23', website:null, uid:'CHE-345.678.901', since:'1999' },
-  { id:4, name:'Réparations Kuonen', category:'Riparazioni generali', city:'Brig', zefix:true, google:false, rating:null, reviews:0, phone:'+41 79 234 56 78', website:null, uid:'CHE-456.789.012', since:'2019' },
-  { id:5, name:'Pedretti Peinture & Rénovation', category:'Pittore / Peintre', city:'Martigny', zefix:true, google:true, rating:4.8, reviews:41, phone:'+41 27 567 89 01', website:'pedretti-peinture.ch', uid:'CHE-567.890.123', since:'2011' },
-  { id:6, name:'Alpenservice Müller', category:'Tuttofare / Handwerker', city:'Zermatt', zefix:true, google:false, rating:null, reviews:0, phone:'+41 79 876 54 32', website:null, uid:'CHE-678.901.234', since:'2021' },
-  { id:7, name:'Plomberie Tornay', category:'Idraulico / Sanitaire', city:'Martigny', zefix:false, google:true, rating:4.5, reviews:23, phone:'+41 79 111 22 33', website:null, uid:null, since:null },
-  { id:8, name:'Électro Sarbach', category:'Elettricista / Électricien', city:'Naters', zefix:false, google:true, rating:3.9, reviews:8, phone:'+41 79 444 55 66', website:'electro-sarbach.ch', uid:null, since:null },
-  { id:9, name:'Handyman Valais', category:'Tuttofare / Handwerker', city:'Sion', zefix:false, google:true, rating:4.1, reviews:14, phone:'+41 79 777 88 99', website:null, uid:null, since:null },
-];
+import { useEffect, useState } from 'react';
+import { supabase } from './supabase.js';
 
 const T = {
   bg: '#FFFFFF', surface: '#F8F8F8', surfaceAlt: '#F0F0F0',
@@ -19,9 +8,6 @@ const T = {
   primaryLight: 'rgba(232,53,42,0.06)', primaryBorder: 'rgba(232,53,42,0.18)',
   green: '#00996A', yellow: '#B87000',
 };
-
-const CATEGORIES = ['Tutte', ...new Set(MOCK_DATA.map(d => d.category))];
-const CITIES = ['Tutte', ...new Set(MOCK_DATA.map(d => d.city))];
 
 function stars(r) {
   let s = '';
@@ -80,12 +66,32 @@ function Card({ pro }) {
 }
 
 export default function App() {
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Tutte');
   const [city, setCity] = useState('Tutte');
   const [filter, setFilter] = useState('tutti');
 
-  const filtered = MOCK_DATA.filter(p => {
+  useEffect(() => {
+    (async () => {
+      const { data: rows } = await supabase.from('artisans').select('*');
+      if (rows) setData(rows);
+      setLoading(false);
+    })();
+  }, []);
+
+  const CATEGORIES = ['Tutte', ...new Set(data.map(d => d.category))];
+  const CITIES = ['Tutte', ...new Set(data.map(d => d.city))];
+
+  if (loading) return (
+    <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, fontFamily: 'Syne, sans-serif' }}>
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '2px', color: T.primary, textTransform: 'uppercase' }}>WiSiArtisan</div>
+      <div style={{ fontSize: 13, color: T.textMuted, letterSpacing: '1px' }}>Caricamento…</div>
+    </div>
+  );
+
+  const filtered = data.filter(p => {
     const mS = p.name.toLowerCase().includes(search.toLowerCase());
     const mC = category === 'Tutte' || p.category === category;
     const mCi = city === 'Tutte' || p.city === city;
@@ -97,10 +103,10 @@ export default function App() {
   });
 
   const stats = {
-    total: MOCK_DATA.length,
-    zefix: MOCK_DATA.filter(p => p.zefix).length,
-    invisible: MOCK_DATA.filter(p => p.zefix && !p.google).length,
-    unverified: MOCK_DATA.filter(p => !p.zefix && p.google).length,
+    total: data.length,
+    zefix: data.filter(p => p.zefix).length,
+    invisible: data.filter(p => p.zefix && !p.google).length,
+    unverified: data.filter(p => !p.zefix && p.google).length,
   };
 
   const PILLS = [
