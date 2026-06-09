@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
+import { Routes, Route, useNavigate } from 'react-router-dom';
 import { supabase } from './supabase.js';
+import ArtisanPage from './ArtisanPage.jsx';
 
 const VALAIS_CITIES = ['Sion', 'Sierre', 'Martigny', 'Brig', 'Visp', 'Monthey', 'Naters', 'Brig-Glis', 'Zermatt', 'Crans-Montana', 'Verbier', 'Saas-Fee', 'Leuk', 'Leukerbad', 'Gampel', 'Steg', 'Raron', 'Mörel', 'Fiesch', 'Münster', 'Ulrichen', 'Oberwald', 'Conthey', 'Vétroz', 'Ardon', 'Chamoson', 'Riddes', 'Saxon', 'Fully', 'Charrat', 'Saillon', 'Leytron', 'Isérables', 'Nendaz', 'Vex', 'Evolène', 'Hérémence', 'Saint-Martin', 'Grône', 'Chalais', 'Chippis', 'Salgesch', 'Venthône', 'Miège', 'Randogne', 'Lens', 'Icogne', 'Chermignon', 'Montana', 'Mollens', 'Ayent', 'Anzère', 'Arbaz', 'Savièse', 'Grimisuat', 'Salins', 'Bramois', 'Bagnes', 'Sembrancher', 'Orsières', 'Liddes', 'Bourg-Saint-Pierre', 'Troistorrents', 'Val-d\'Illiez', 'Champéry', 'Collombey-Muraz', 'Massongex', 'Saint-Maurice', 'Vérossaz', 'Dorénaz', 'Evionnaz', 'Miéville', 'Vernayaz', 'Salvan', 'Finhaut', 'Trient', 'Stalden', 'Staldenried', 'Saas-Grund', 'Saas-Almagell', 'Saas-Balen', 'Täsch', 'Randa', 'Sankt Niklaus', 'Baltschieder', 'Lalden', 'Eggerberg', 'Niedergesteln', 'Guttet-Feschel', 'Albinen', 'Inden', 'Varen', 'Erschmatt', 'Bratsch', 'Ergisch', 'Agarn', 'Turtmann', 'Eischoll', 'Unterbäch', 'Bürchen', 'Zeneggen', 'Törbel', 'Embd', 'Grächen', 'Saint-Luc', 'Chandolin', 'Grimentz', 'Zinal', 'Ayer', 'Vissoie', 'Vercorin', 'Réchy', 'Anniviers', 'Euseigne', 'Mase', 'Loèche', 'Loèche-les-Bains']
 
@@ -107,6 +109,9 @@ function Card({ pro }) {
           )}
           {pro.zefix && !pro.google && <div style={{ gridColumn: '1/-1', marginTop: 4 }}><span style={{ background: 'rgba(184,112,0,0.08)', color: T.yellow, fontSize: 11, padding: '5px 10px', borderRadius: 3, border: '1px solid rgba(184,112,0,0.2)', display: 'block', fontFamily: 'Syne, sans-serif' }}>⚡ Opportunità: nessuna presenza online — iscrizione gratuita disponibile</span></div>}
           {!pro.zefix && pro.google && <div style={{ gridColumn: '1/-1', marginTop: 4 }}><span style={{ background: T.surface, color: T.textSecondary, fontSize: 11, padding: '5px 10px', borderRadius: 3, border: `1px solid ${T.border}`, display: 'block', fontFamily: 'Syne, sans-serif' }}>⚠ Non trovato nel Registro Commerciale svizzero — verifica consigliata</span></div>}
+          <div style={{ gridColumn: '1/-1', marginTop: 8 }}>
+            <a href={`/artigiano/${pro.id}`} style={{ display: 'inline-block', background: T.primary, color: '#fff', fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', padding: '7px 14px', borderRadius: 3, textDecoration: 'none', fontFamily: 'Syne, sans-serif' }} onClick={e => e.stopPropagation()}>Vedi profilo completo →</a>
+          </div>
         </div>
       )}
     </div>
@@ -195,14 +200,15 @@ function getDistanceKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 }
 
-export default function App() {
+function Directory({ initialTab = 'lista' }) {
+  const navigate = useNavigate();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('Tutte');
   const [city, setCity] = useState('Tutte');
   const [filter, setFilter] = useState('tutti');
-  const [activeTab, setActiveTab] = useState('lista');
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [userLocation, setUserLocation] = useState(null);
   const [maxDistance, setMaxDistance] = useState(30);
   const [locating, setLocating] = useState(false);
@@ -270,7 +276,7 @@ export default function App() {
     <div style={{ minHeight: '100vh', background: T.bg, fontFamily: 'Syne, sans-serif', paddingBottom: 40 }}>
       <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: T.bg, borderBottom: '1px solid #E8E8E8', padding: '0 20px', display: 'flex', alignItems: 'center', gap: 12, height: 52 }}>
         <button style={{ border: '1px solid #E8E8E8', borderRadius: 3, padding: '7px 10px', background: 'transparent', cursor: 'pointer', color: T.textSecondary }}>☰</button>
-        <span style={{ flex: 1, fontSize: 11, fontWeight: 800, letterSpacing: '2px', color: T.primary, textTransform: 'uppercase' }}>WiSiArtisan</span>
+        <span onClick={() => navigate('/')} style={{ flex: 1, fontSize: 11, fontWeight: 800, letterSpacing: '2px', color: T.primary, textTransform: 'uppercase', cursor: 'pointer' }}>WiSiArtisan</span>
         <div style={{ display: 'flex', gap: 6 }}>
           <button onClick={() => setActiveTab('lista')} style={{ background: activeTab === 'lista' ? '#E8352A' : '#F8F8F8', border: '1px solid #E8E8E8', borderRadius: 3, padding: '5px 12px', fontSize: 11, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: activeTab === 'lista' ? '#fff' : '#666', cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>Vallese</button>
           <button onClick={() => setActiveTab('mappa')} style={{ background: activeTab === 'mappa' ? '#E8352A' : '#F8F8F8', border: '1px solid #E8E8E8', borderRadius: 3, padding: '5px 12px', fontSize: 11, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: activeTab === 'mappa' ? '#fff' : '#666', cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>Mappa</button>
@@ -369,4 +375,14 @@ export default function App() {
       </div>
     </div>
   );
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path='/' element={<Directory />} />
+      <Route path='/mappa' element={<Directory initialTab='mappa' />} />
+      <Route path='/artigiano/:id' element={<ArtisanPage />} />
+    </Routes>
+  )
 }
