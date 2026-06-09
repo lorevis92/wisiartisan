@@ -22,18 +22,25 @@ async function searchGooglePlaces(name, city) {
   const candidate = findData.candidates[0]
   const placeId = candidate.place_id
 
-  const detailUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=formatted_phone_number,website&key=${GOOGLE_KEY}`
+  const detailUrl = `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=formatted_phone_number,website,reviews,url,photos&key=${GOOGLE_KEY}`
 
   const detailResponse = await fetch(detailUrl)
   const detailData = await detailResponse.json()
 
   const details = detailData.result || {}
 
+  const phone = details.formatted_phone_number || null
+  const isSwissPhone = !phone || phone.replace(/\s/g, '').match(/^(\+41|0041|027|024|026|028|079|078|077|076|075)/)
+  if (!isSwissPhone) return null
+
   return {
     rating: candidate.rating || null,
     user_ratings_total: candidate.user_ratings_total || 0,
-    formatted_phone_number: details.formatted_phone_number || null,
+    formatted_phone_number: phone,
     website: details.website || null,
+    google_place_id: placeId,
+    google_reviews_data: details.reviews || null,
+    photos: details.photos ? details.photos.slice(0, 5).map(p => p.photo_reference) : null,
   }
 }
 
@@ -65,6 +72,9 @@ async function main() {
         reviews: place.user_ratings_total || 0,
         phone: place.formatted_phone_number || null,
         website: place.website || null,
+        google_place_id: place.google_place_id,
+        google_reviews_data: place.google_reviews_data,
+        photos: place.photos || null,
       }
 
       const { error: updateError } = await supabase

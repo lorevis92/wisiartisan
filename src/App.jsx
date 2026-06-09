@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { supabase } from './supabase.js';
+
+const VALAIS_CITIES = ['Sion', 'Sierre', 'Martigny', 'Brig', 'Visp', 'Monthey', 'Naters', 'Brig-Glis', 'Zermatt', 'Crans-Montana', 'Verbier', 'Saas-Fee', 'Leuk', 'Leukerbad', 'Gampel', 'Steg', 'Raron', 'Mörel', 'Fiesch', 'Münster', 'Ulrichen', 'Oberwald', 'Conthey', 'Vétroz', 'Ardon', 'Chamoson', 'Riddes', 'Saxon', 'Fully', 'Charrat', 'Saillon', 'Leytron', 'Isérables', 'Nendaz', 'Vex', 'Evolène', 'Hérémence', 'Saint-Martin', 'Grône', 'Chalais', 'Chippis', 'Salgesch', 'Venthône', 'Miège', 'Randogne', 'Lens', 'Icogne', 'Chermignon', 'Montana', 'Mollens', 'Ayent', 'Anzère', 'Arbaz', 'Savièse', 'Grimisuat', 'Salins', 'Bramois', 'Bagnes', 'Sembrancher', 'Orsières', 'Liddes', 'Bourg-Saint-Pierre', 'Troistorrents', 'Val-d\'Illiez', 'Champéry', 'Collombey-Muraz', 'Massongex', 'Saint-Maurice', 'Vérossaz', 'Dorénaz', 'Evionnaz', 'Miéville', 'Vernayaz', 'Salvan', 'Finhaut', 'Trient', 'Stalden', 'Staldenried', 'Saas-Grund', 'Saas-Almagell', 'Saas-Balen', 'Täsch', 'Randa', 'Sankt Niklaus', 'Baltschieder', 'Lalden', 'Eggerberg', 'Niedergesteln', 'Guttet-Feschel', 'Albinen', 'Inden', 'Varen', 'Erschmatt', 'Bratsch', 'Ergisch', 'Agarn', 'Turtmann', 'Eischoll', 'Unterbäch', 'Bürchen', 'Zeneggen', 'Törbel', 'Embd', 'Grächen', 'Saint-Luc', 'Chandolin', 'Grimentz', 'Zinal', 'Ayer', 'Vissoie', 'Vercorin', 'Réchy', 'Anniviers', 'Euseigne', 'Mase', 'Loèche', 'Loèche-les-Bains']
 
 const T = {
   bg: '#FFFFFF', surface: '#F8F8F8', surfaceAlt: '#F0F0F0',
@@ -28,6 +30,10 @@ function BadgeUnverified() {
   return <span style={{ background: T.surface, color: T.textSecondary, fontSize: 9, fontWeight: 700, letterSpacing: '0.8px', padding: '2px 7px', borderRadius: 3, border: `1px solid ${T.border}`, textTransform: 'uppercase', fontFamily: 'Syne, sans-serif' }}>⚠ Non verificato CH</span>;
 }
 
+function getPhotoUrl(photoReference, maxWidth = 400) {
+  return `https://maps.googleapis.com/maps/api/place/photo?maxwidth=${maxWidth}&photo_reference=${photoReference}&key=AIzaSyAsPSA5TM1Wis0-qJUp5cuEbLQ_zMkpyic`
+}
+
 function Card({ pro }) {
   const [expanded, setExpanded] = useState(false);
   const isHighlight = pro.zefix && pro.google;
@@ -47,22 +53,146 @@ function Card({ pro }) {
         {pro.google && pro.rating && (
           <div style={{ textAlign: 'right', flexShrink: 0 }}>
             <div style={{ color: T.yellow, fontSize: 13, letterSpacing: 1 }}>{stars(pro.rating)}</div>
-            <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: T.textMuted, marginTop: 2 }}>{pro.rating.toFixed(1)} · {pro.reviews} rec.</div>
+            <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 10, color: T.textMuted, marginTop: 2 }}>{pro.rating.toFixed(1)} · {pro.reviews} recensioni</div>
           </div>
         )}
       </div>
       {expanded && (
-        <div style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}`, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: 12, color: T.textSecondary, fontFamily: 'Syne, sans-serif' }}>
+        <div onClick={e => e.stopPropagation()} style={{ marginTop: 14, paddingTop: 14, borderTop: `1px solid ${T.border}`, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 16px', fontSize: 12, color: T.textSecondary, fontFamily: 'Syne, sans-serif' }}>
+          {pro.photos && pro.photos.length > 0 && (
+            <div style={{ gridColumn: '1/-1', display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 8, marginBottom: 8, borderBottom: `1px solid ${T.border}` }}>
+              {pro.photos.map((ref, i) => (
+                <img key={i} src={getPhotoUrl(ref)} alt={pro.name}
+                  style={{ height: 120, width: 160, objectFit: 'cover', borderRadius: 4, flexShrink: 0 }} />
+              ))}
+            </div>
+          )}
+          {pro.lat && pro.lng && (
+            <div style={{ gridColumn: '1/-1', marginBottom: 8 }}>
+              <iframe
+                title={pro.name}
+                width='100%'
+                height='160'
+                style={{ border: 'none', borderRadius: 4 }}
+                loading='lazy'
+                src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyAsPSA5TM1Wis0-qJUp5cuEbLQ_zMkpyic&q=${pro.lat},${pro.lng}&zoom=15`}
+              />
+            </div>
+          )}
           <div><span style={{ color: T.textMuted, fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>UID</span><br /><span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: T.primary }}>{pro.uid || '—'}</span></div>
           <div><span style={{ color: T.textMuted, fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Dal</span><br /><span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11 }}>{pro.since || '—'}</span></div>
-          <div><span style={{ color: T.textMuted, fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Tel.</span><br /><span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11 }}>{pro.phone}</span></div>
-          <div><span style={{ color: T.textMuted, fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Web</span><br />{pro.website ? <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: T.primary }}>{pro.website}</span> : <span style={{ fontSize: 11, color: T.textMuted, fontStyle: 'italic' }}>Nessun sito web</span>}</div>
+          <div><span style={{ color: T.textMuted, fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Tel.</span><br /><span onClick={e => { e.stopPropagation(); navigator.clipboard.writeText(pro.phone); e.target.textContent = 'Copiato!'; setTimeout(() => { e.target.textContent = pro.phone }, 1500) }} style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, cursor: 'pointer', color: T.text }} title='Clicca per copiare'>{pro.phone}</span></div>
+          <div><span style={{ color: T.textMuted, fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase' }}>Web</span><br />{pro.website ? <a href={pro.website.startsWith('http') ? pro.website : `https://${pro.website}`} target='_blank' rel='noopener noreferrer' onClick={e => e.stopPropagation()} style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: T.primary, textDecoration: 'none', wordBreak: 'break-all' }}>{pro.website}</a> : <span style={{ fontSize: 11, color: T.textMuted, fontStyle: 'italic' }}>Nessun sito web</span>}</div>
+          {pro.since && (
+            <div style={{ gridColumn: '1/-1', marginBottom: 4 }}>
+              <span style={{ background: T.primaryLight, border: `1px solid ${T.primaryBorder}`, borderRadius: 3, padding: '3px 8px', fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.primary, fontFamily: 'Syne, sans-serif' }}>
+                Attivo dal {pro.since}
+              </span>
+            </div>
+          )}
+          {pro.google_reviews_data && pro.google_reviews_data.length > 0 && (
+            <div style={{ gridColumn: '1/-1', marginTop: 8, borderTop: `1px solid ${T.border}`, paddingTop: 12, maxHeight: 320, overflowY: 'auto' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: T.textMuted, marginBottom: 8 }}>Recensioni Google</div>
+              {[...pro.google_reviews_data].sort((a, b) => b.time - a.time).map((review, i) => (
+                <div key={i} style={{ marginBottom: 10, paddingBottom: 10, borderBottom: i < 2 ? `1px solid ${T.border}` : 'none' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, color: T.text, fontFamily: 'Syne, sans-serif' }}>{review.author_name}</span>
+                    <span style={{ color: T.yellow, fontSize: 11, letterSpacing: 1 }}>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</span>
+                  </div>
+                  {review.text && <div style={{ fontSize: 11, color: T.textSecondary, lineHeight: 1.5, fontFamily: 'Syne, sans-serif' }}>{review.text}</div>}
+                  <div style={{ fontSize: 10, color: T.textMuted, marginTop: 3, fontFamily: 'DM Mono, monospace' }}>{review.relative_time_description}</div>
+                </div>
+              ))}
+            </div>
+          )}
           {pro.zefix && !pro.google && <div style={{ gridColumn: '1/-1', marginTop: 4 }}><span style={{ background: 'rgba(184,112,0,0.08)', color: T.yellow, fontSize: 11, padding: '5px 10px', borderRadius: 3, border: '1px solid rgba(184,112,0,0.2)', display: 'block', fontFamily: 'Syne, sans-serif' }}>⚡ Opportunità: nessuna presenza online — iscrizione gratuita disponibile</span></div>}
           {!pro.zefix && pro.google && <div style={{ gridColumn: '1/-1', marginTop: 4 }}><span style={{ background: T.surface, color: T.textSecondary, fontSize: 11, padding: '5px 10px', borderRadius: 3, border: `1px solid ${T.border}`, display: 'block', fontFamily: 'Syne, sans-serif' }}>⚠ Non trovato nel Registro Commerciale svizzero — verifica consigliata</span></div>}
         </div>
       )}
     </div>
   );
+}
+
+function MapView({ artisans }) {
+  const mapRef = useRef(null)
+  const mapInstanceRef = useRef(null)
+  const markersRef = useRef([])
+
+  useEffect(() => {
+    if (!mapRef.current || !window.google) return
+
+    if (!mapInstanceRef.current) {
+      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+        center: { lat: 46.2044, lng: 7.3600 },
+        zoom: 10,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        gestureHandling: 'greedy',
+        zoomControl: true,
+        zoomControlOptions: {
+          position: window.google.maps.ControlPosition.RIGHT_CENTER,
+        },
+      })
+    }
+
+    markersRef.current.forEach(m => m.setMap(null))
+    markersRef.current = []
+
+    const bounds = new window.google.maps.LatLngBounds()
+    let hasPoints = false
+
+    artisans.forEach(a => {
+      if (!a.lat || !a.lng) return
+      const color = a.zefix && a.google ? '#E8352A' : a.zefix && !a.google ? '#B87000' : '#666666'
+      const marker = new window.google.maps.Marker({
+        position: { lat: a.lat, lng: a.lng },
+        map: mapInstanceRef.current,
+        title: a.name,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 7,
+          fillColor: color,
+          fillOpacity: 0.9,
+          strokeColor: '#ffffff',
+          strokeWeight: 1.5,
+        }
+      })
+
+      const infoWindow = new window.google.maps.InfoWindow({
+        content: `<div style='font-family:sans-serif;padding:4px 2px;min-width:160px'>
+          <div style='font-weight:700;font-size:13px;margin-bottom:3px'>${a.name}</div>
+          <div style='font-size:11px;color:#666;margin-bottom:3px'>${a.category} · ${a.city || ''}</div>
+          ${a.rating ? `<div style='font-size:11px;color:#B87000'>${'★'.repeat(Math.round(a.rating))} ${a.rating.toFixed(1)}</div>` : ''}
+          ${a.phone ? `<div style='font-size:11px;margin-top:3px'>${a.phone}</div>` : ''}
+        </div>`
+      })
+
+      marker.addListener('click', () => {
+        infoWindow.open(mapInstanceRef.current, marker)
+      })
+
+      markersRef.current.push(marker)
+      bounds.extend({ lat: a.lat, lng: a.lng })
+      hasPoints = true
+    })
+
+    if (hasPoints) {
+      mapInstanceRef.current.fitBounds(bounds, { padding: 40 })
+    }
+  }, [artisans])
+
+  return <div ref={mapRef} style={{ width: '100%', height: 'calc(100vh - 52px)' }} />
+}
+
+function getDistanceKm(lat1, lng1, lat2, lng2) {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLng = (lng2 - lng1) * Math.PI / 180
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLng/2) * Math.sin(dLng/2)
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 }
 
 export default function App() {
@@ -72,6 +202,24 @@ export default function App() {
   const [category, setCategory] = useState('Tutte');
   const [city, setCity] = useState('Tutte');
   const [filter, setFilter] = useState('tutti');
+  const [activeTab, setActiveTab] = useState('lista');
+  const [userLocation, setUserLocation] = useState(null);
+  const [maxDistance, setMaxDistance] = useState(30);
+  const [locating, setLocating] = useState(false);
+
+  function locateMe() {
+    setLocating(true)
+    navigator.geolocation.getCurrentPosition(
+      pos => {
+        setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        setLocating(false)
+      },
+      () => {
+        alert('Impossibile ottenere la posizione')
+        setLocating(false)
+      }
+    )
+  }
 
   useEffect(() => {
     (async () => {
@@ -82,7 +230,7 @@ export default function App() {
   }, []);
 
   const CATEGORIES = ['Tutte', ...new Set(data.map(d => d.category))];
-  const CITIES = ['Tutte', ...new Set(data.map(d => d.city))];
+  const CITIES = ['Tutte', ...VALAIS_CITIES.filter(c => data.some(d => d.city && d.city.toLowerCase().includes(c.toLowerCase()))).sort()];
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, fontFamily: 'Syne, sans-serif' }}>
@@ -99,7 +247,9 @@ export default function App() {
       (filter === 'verificati' && p.zefix && p.google) ||
       (filter === 'invisibili' && p.zefix && !p.google) ||
       (filter === 'nonverificati' && !p.zefix && p.google);
-    return mS && mC && mCi && mF;
+    const mDist = !userLocation || !p.lat || !p.lng ? true :
+      getDistanceKm(userLocation.lat, userLocation.lng, p.lat, p.lng) <= maxDistance;
+    return mS && mC && mCi && mF && mDist;
   });
 
   const stats = {
@@ -122,10 +272,11 @@ export default function App() {
         <button style={{ border: '1px solid #E8E8E8', borderRadius: 3, padding: '7px 10px', background: 'transparent', cursor: 'pointer', color: T.textSecondary }}>☰</button>
         <span style={{ flex: 1, fontSize: 11, fontWeight: 800, letterSpacing: '2px', color: T.primary, textTransform: 'uppercase' }}>WiSiArtisan</span>
         <div style={{ display: 'flex', gap: 6 }}>
-          <button style={{ background: T.surface, border: '1px solid #E8E8E8', borderRadius: 3, padding: '5px 12px', fontSize: 11, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.primary, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>Vallese</button>
-          <button style={{ background: 'transparent', border: '1px solid transparent', borderRadius: 3, padding: '5px 12px', fontSize: 11, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.textSecondary, cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>Mappa</button>
+          <button onClick={() => setActiveTab('lista')} style={{ background: activeTab === 'lista' ? '#E8352A' : '#F8F8F8', border: '1px solid #E8E8E8', borderRadius: 3, padding: '5px 12px', fontSize: 11, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: activeTab === 'lista' ? '#fff' : '#666', cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>Vallese</button>
+          <button onClick={() => setActiveTab('mappa')} style={{ background: activeTab === 'mappa' ? '#E8352A' : '#F8F8F8', border: '1px solid #E8E8E8', borderRadius: 3, padding: '5px 12px', fontSize: 11, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: activeTab === 'mappa' ? '#fff' : '#666', cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}>Mappa</button>
         </div>
       </nav>
+      {activeTab === 'lista' && <div>
       <div style={{ background: T.text, padding: '32px 20px 24px' }}>
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '3px', color: T.textMuted, textTransform: 'uppercase', marginBottom: 10 }}>Prototipo · Canton Vallese</div>
@@ -164,6 +315,33 @@ export default function App() {
             <button key={f.key} onClick={() => setFilter(f.key)} style={{ padding: '5px 13px', borderRadius: 3, border: filter === f.key ? 'none' : '1px solid #E8E8E8', background: filter === f.key ? T.primary : T.surface, color: filter === f.key ? '#fff' : T.textSecondary, fontSize: 10, fontWeight: 700, cursor: 'pointer', letterSpacing: '0.8px', textTransform: 'uppercase', fontFamily: 'Syne, sans-serif' }}>{f.label}</button>
           ))}
         </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16, padding: '10px 14px', background: T.surface, border: `1px solid ${T.border}`, borderRadius: 4 }}>
+          <button onClick={locateMe} style={{ background: userLocation ? T.primary : T.text, color: '#fff', border: 'none', borderRadius: 3, padding: '6px 12px', fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Syne, sans-serif', flexShrink: 0 }}>
+            {locating ? '...' : userLocation ? '📍 Posizione attiva' : '📍 Vicino a me'}
+          </button>
+          {userLocation && (
+            <>
+              <input
+                type='range'
+                min={1}
+                max={100}
+                value={maxDistance}
+                onChange={e => setMaxDistance(Number(e.target.value))}
+                style={{ flex: 1, accentColor: T.primary }}
+              />
+              <input
+                type='number'
+                min={1}
+                max={100}
+                value={maxDistance}
+                onChange={e => setMaxDistance(Number(e.target.value))}
+                style={{ width: 52, padding: '5px 8px', borderRadius: 3, border: `1px solid ${T.border}`, fontSize: 12, fontFamily: 'DM Mono, monospace', color: T.text, background: T.bg, outline: 'none', textAlign: 'center' }}
+              />
+              <span style={{ fontSize: 11, color: T.textMuted, fontFamily: 'Syne, sans-serif', flexShrink: 0 }}>km</span>
+              <button onClick={() => setUserLocation(null)} style={{ background: 'transparent', border: `1px solid ${T.border}`, borderRadius: 3, padding: '5px 8px', fontSize: 10, color: T.textMuted, cursor: 'pointer', fontFamily: 'Syne, sans-serif', flexShrink: 0 }}>✕</button>
+            </>
+          )}
+        </div>
         <div>{filtered.length === 0 ? <div style={{ textAlign: 'center', color: T.textMuted, padding: '40px 0', fontSize: 13 }}>Nessun risultato trovato</div> : filtered.map(p => <Card key={p.id} pro={p} />)}</div>
         <div style={{ marginTop: 20, padding: '14px 16px', background: T.surface, border: '1px solid #E8E8E8', borderRadius: 6 }}>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: T.textSecondary, marginBottom: 8 }}>Legenda</div>
@@ -176,6 +354,8 @@ export default function App() {
         </div>
         <div style={{ marginTop: 12, textAlign: 'center', fontSize: 9, fontWeight: 700, letterSpacing: '2px', color: T.textMuted, textTransform: 'uppercase' }}>Dati mock — Prototipo concettuale · Zefix.admin.ch + Google Places</div>
       </div>
+      </div>}
+      {activeTab === 'mappa' && <MapView artisans={filtered} />}
       <div style={{ borderTop: '1px solid #E8E8E8', background: T.surface, padding: 20, marginTop: 40 }}>
         <div style={{ maxWidth: 600, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
