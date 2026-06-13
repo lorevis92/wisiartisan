@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from './supabase.js'
+import { useLang, LangSwitcher } from './LangContext.jsx'
 
 const T = {
   bg: '#FFFFFF', surface: '#F8F8F8', surfaceAlt: '#F0F0F0',
@@ -22,22 +23,10 @@ function stars(r) {
   return s
 }
 
-function BadgeZefix() {
-  return <span style={{ background: T.text, color: '#fff', fontSize: 9, fontWeight: 700, letterSpacing: '1.2px', padding: '2px 7px', borderRadius: 3, textTransform: 'uppercase', fontFamily: 'Syne, sans-serif' }}>✓ Zefix CH</span>
-}
-function BadgeGoogle() {
-  return <span style={{ background: T.surfaceAlt, color: T.textSecondary, fontSize: 9, fontWeight: 700, letterSpacing: '0.8px', padding: '2px 7px', borderRadius: 3, border: `1px solid ${T.border}`, textTransform: 'uppercase', fontFamily: 'Syne, sans-serif' }}>Google</span>
-}
-function BadgeInvisible() {
-  return <span style={{ background: '#FFF8E6', color: T.yellow, fontSize: 9, fontWeight: 700, letterSpacing: '0.8px', padding: '2px 7px', borderRadius: 3, border: '1px solid rgba(184,112,0,0.25)', textTransform: 'uppercase', fontFamily: 'Syne, sans-serif' }}>◎ Solo offline</span>
-}
-function BadgeUnverified() {
-  return <span style={{ background: T.surface, color: T.textSecondary, fontSize: 9, fontWeight: 700, letterSpacing: '0.8px', padding: '2px 7px', borderRadius: 3, border: `1px solid ${T.border}`, textTransform: 'uppercase', fontFamily: 'Syne, sans-serif' }}>⚠ Non verificato CH</span>
-}
-
 export default function ArtisanPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { t } = useLang()
   const [pro, setPro] = useState(null)
   const [loading, setLoading] = useState(true)
   const [activePhoto, setActivePhoto] = useState(0)
@@ -53,24 +42,29 @@ export default function ArtisanPage() {
 
   if (loading) return (
     <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '3px', color: T.textMuted, textTransform: 'uppercase', fontFamily: 'Syne, sans-serif' }}>Caricamento…</div>
+      <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '3px', color: T.textMuted, textTransform: 'uppercase', fontFamily: 'Syne, sans-serif' }}>{t('loading')}</div>
     </div>
   )
 
   if (!pro) return (
     <div style={{ minHeight: '100vh', background: T.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <div style={{ fontSize: 13, color: T.textMuted, fontFamily: 'Syne, sans-serif' }}>Artigiano non trovato</div>
+      <div style={{ fontSize: 13, color: T.textMuted, fontFamily: 'Syne, sans-serif' }}>{t('artisanNotFound')}</div>
     </div>
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: T.bg, fontFamily: 'Syne, sans-serif', paddingBottom: 40 }}>
+    <div style={{ minHeight: '100vh', background: '#FFFFFF', fontFamily: 'Syne, sans-serif', paddingBottom: 0, display: 'flex', flexDirection: 'column' }}>
 
       {/* NAVBAR */}
       <nav style={{ position: 'sticky', top: 0, zIndex: 100, background: T.bg, borderBottom: `1px solid ${T.border}`, padding: '0 20px', display: 'flex', alignItems: 'center', gap: 12, height: 52 }}>
-        <button onClick={() => navigate(-1)} style={{ border: `1px solid ${T.border}`, borderRadius: 3, padding: '7px 10px', background: 'transparent', cursor: 'pointer', color: T.textSecondary, fontFamily: 'Syne, sans-serif', fontSize: 11, fontWeight: 700 }}>← Indietro</button>
-        <span style={{ flex: 1, fontSize: 11, fontWeight: 800, letterSpacing: '2px', color: T.primary, textTransform: 'uppercase' }}>WiSiArtisan</span>
+        <button onClick={() => navigate(-1)} style={{ border: `1px solid ${T.border}`, borderRadius: 3, padding: '7px 10px', background: 'transparent', cursor: 'pointer', color: T.textSecondary, fontFamily: 'Syne, sans-serif', fontSize: 11, fontWeight: 700 }}>{t('back')}</button>
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <img src='/logo-wisi.png' alt='WisiFix' style={{ height: 28 }} />
+          <span style={{ fontSize: 15, fontWeight: 800, letterSpacing: '1px', color: '#E8352A', fontFamily: 'Syne, sans-serif', textTransform: 'uppercase' }}>FIX</span>
+        </div>
+        <LangSwitcher />
       </nav>
+      <div style={{ flex: 1 }}>
 
       {/* FOTO */}
       {pro.photos && pro.photos.length > 0 && (
@@ -95,16 +89,14 @@ export default function ArtisanPage() {
           <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 24, fontWeight: 400, color: T.text, marginBottom: 6, lineHeight: 1.2 }}>{pro.name}</h1>
           <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.8px', color: T.textMuted, textTransform: 'uppercase', marginBottom: 10 }}>{pro.category} · {pro.city}</div>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', marginBottom: 12 }}>
-            {pro.zefix && <BadgeZefix />}
-            {pro.google && <BadgeGoogle />}
-            {pro.zefix && !pro.google && <BadgeInvisible />}
-            {!pro.zefix && pro.google && <BadgeUnverified />}
+            {pro.zefix && <span style={{ background: '#F0FAF5', color: T.green, fontSize: 9, fontWeight: 700, letterSpacing: '1px', padding: '2px 7px', borderRadius: 3, border: '1px solid rgba(0,153,106,0.2)', textTransform: 'uppercase', fontFamily: 'Syne, sans-serif' }}>{t('verifiedCH')}</span>}
+            {!pro.zefix && <span style={{ background: T.surface, color: T.textMuted, fontSize: 9, fontWeight: 700, letterSpacing: '1px', padding: '2px 7px', borderRadius: 3, border: `1px solid ${T.border}`, textTransform: 'uppercase', fontFamily: 'Syne, sans-serif' }}>{t('notVerified')}</span>}
           </div>
           {pro.rating && (
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ color: T.yellow, fontSize: 16, letterSpacing: 1 }}>{stars(pro.rating)}</span>
               <span style={{ fontFamily: 'DM Mono, monospace', fontSize: 13, color: T.text }}>{pro.rating.toFixed(1)}</span>
-              <span style={{ fontSize: 12, color: T.textMuted }}>{pro.reviews} recensioni</span>
+              <span style={{ fontSize: 12, color: T.textMuted }}>{pro.reviews} {t('reviewsCount')}</span>
             </div>
           )}
         </div>
@@ -113,20 +105,20 @@ export default function ArtisanPage() {
         <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 6, padding: '16px 18px', marginBottom: 16 }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 16px' }}>
             {pro.uid && <div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.textMuted, marginBottom: 3 }}>UID</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.textMuted, marginBottom: 3 }}>{t('uid')}</div>
               <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: T.primary }}>{pro.uid}</div>
             </div>}
             {pro.since && <div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.textMuted, marginBottom: 3 }}>Attivo dal</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.textMuted, marginBottom: 3 }}>{t('activeSince')}</div>
               <div style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: T.text }}>{pro.since}</div>
             </div>}
             {pro.phone && <div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.textMuted, marginBottom: 3 }}>Telefono</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.textMuted, marginBottom: 3 }}>{t('phone')}</div>
               <div onClick={() => { navigator.clipboard.writeText(pro.phone) }}
-                style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: T.text, cursor: 'pointer' }} title='Clicca per copiare'>{pro.phone}</div>
+                style={{ fontFamily: 'DM Mono, monospace', fontSize: 12, color: T.text, cursor: 'pointer' }} title='Click to copy'>{pro.phone}</div>
             </div>}
             {pro.website && <div>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.textMuted, marginBottom: 3 }}>Sito web</div>
+              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.textMuted, marginBottom: 3 }}>{t('website')}</div>
               <a href={pro.website.startsWith('http') ? pro.website : `https://${pro.website}`}
                 target='_blank' rel='noopener noreferrer'
                 style={{ fontFamily: 'DM Mono, monospace', fontSize: 11, color: T.primary, textDecoration: 'none', wordBreak: 'break-all' }}>{pro.website}</a>
@@ -145,7 +137,7 @@ export default function ArtisanPage() {
         {/* RECENSIONI */}
         {pro.google_reviews_data && pro.google_reviews_data.length > 0 && (
           <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 6, padding: '16px 18px', marginBottom: 16 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: T.textMuted, marginBottom: 12 }}>Recensioni Google</div>
+            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '1.5px', textTransform: 'uppercase', color: T.textMuted, marginBottom: 12 }}>{t('googleReviews')}</div>
             {[...pro.google_reviews_data].sort((a, b) => b.time - a.time).map((review, i) => (
               <div key={i} style={{ marginBottom: 14, paddingBottom: 14, borderBottom: i < pro.google_reviews_data.length - 1 ? `1px solid ${T.border}` : 'none' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
@@ -160,17 +152,17 @@ export default function ArtisanPage() {
         )}
 
       </div>
+      </div>
 
       {/* FOOTER */}
-      <div style={{ borderTop: `1px solid ${T.border}`, background: T.surface, padding: 20, marginTop: 40 }}>
+      <div style={{ borderTop: '1px solid #E8E8E8', background: '#F8F8F8', padding: '20px', marginTop: 'auto' }}>
         <div style={{ maxWidth: 600, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <div style={{ width: 32, height: 32, background: T.primary, borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <span style={{ color: '#fff', fontSize: 10, fontWeight: 800 }}>W</span>
-            </div>
-            <span style={{ fontSize: 11, color: T.textSecondary }}>Part of the WiSiVERSE ecosystem</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#666666', fontFamily: 'Syne, sans-serif' }}>
+            Part of the
+            <img src='/logo-wisiverse.png' alt='WiSiVERSE' style={{ height: 20, verticalAlign: 'middle' }} />
+            ecosystem
           </div>
-          <a href='https://wisiverse.com' style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: T.primary, textDecoration: 'none' }}>wisiverse.com →</a>
+          <a href='https://wisiverse.com' style={{ fontSize: 11, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', color: '#E8352A', textDecoration: 'none', fontFamily: 'Syne, sans-serif' }}>wisiverse.com →</a>
         </div>
       </div>
     </div>
