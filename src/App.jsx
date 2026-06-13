@@ -162,6 +162,39 @@ function getDistanceKm(lat1, lng1, lat2, lng2) {
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
 }
 
+async function interpretSearch(userQuery) {
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': import.meta.env.VITE_ANTHROPIC_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 200,
+      messages: [{
+        role: 'user',
+        content: `Sei un assistente per WisiFix, una directory di professionisti nel Canton Vallese, Svizzera.
+L'utente ha scritto: '${userQuery}'
+
+Estrai i filtri di ricerca e rispondi SOLO con un JSON valido senza markdown, con questa struttura:
+{
+  'search': 'termine di ricerca per nome/categoria',
+  'city': 'città specifica o null',
+  'suggestion': 'suggerimento breve in italiano di max 10 parole'
+}
+
+Categorie disponibili: Idraulico, Elettricista, Pittore, Falegname, Termoidraulico, Muratore, Coperture, Pavimentista, Fabbro, Tuttofare, Riparazioni.
+Città del Vallese: Sion, Sierre, Martigny, Brig, Visp, Monthey, Naters, Zermatt, Crans-Montana, Verbier, Saas-Fee ecc.`
+      }]
+    })
+  })
+  const data = await response.json()
+  const text = data.content[0].text
+  return JSON.parse(text)
+}
+
 function Directory({ initialTab = 'lista' }) {
   const { t } = useLang()
   const navigate = useNavigate();
@@ -174,6 +207,22 @@ function Directory({ initialTab = 'lista' }) {
   const [userLocation, setUserLocation] = useState(null);
   const [maxDistance, setMaxDistance] = useState(30);
   const [locating, setLocating] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+
+  async function handleAISearch(query) {
+    if (query.length < 5) { setAiSuggestion(''); return }
+    setAiLoading(true)
+    try {
+      const result = await interpretSearch(query)
+      if (result.search) setSearch(result.search)
+      if (result.city) setCity(result.city)
+      if (result.suggestion) setAiSuggestion(result.suggestion)
+    } catch(e) {
+      console.error('AI search error:', e)
+    }
+    setAiLoading(false)
+  }
 
   function locateMe() {
     setLocating(true)
@@ -277,9 +326,29 @@ function Directory({ initialTab = 'lista' }) {
       {/* SEARCH CARD sovrapposta */}
       <div style={{ maxWidth: 640, margin: '-48px auto 0', padding: '0 16px', position: 'relative', zIndex: 10 }}>
         <div style={{ background: '#FFFFFF', border: `1px solid ${T.border}`, borderRadius: 6, padding: '18px 18px 14px', boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}>
-          <input type='text' placeholder={t('searchPlaceholder')} value={search} onChange={e => setSearch(e.target.value)}
-            style={{ width: '100%', padding: '12px 16px', borderRadius: 3, border: '1px solid #E8E8E8', fontSize: 14, fontFamily: 'Syne, sans-serif', color: '#111111', background: '#FFFFFF', outline: 'none', marginBottom: 10, boxSizing: 'border-box' }}
-            onFocus={e => e.target.style.borderColor='#E8352A'} onBlur={e => e.target.style.borderColor='#E8E8E8'} />
+          <div style={{ position: 'relative', marginBottom: 10 }}>
+            <input
+              type='text'
+              placeholder='Cerca per nome, categoria, città… oppure scrivi liberamente'
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleAISearch(e.target.value) }}
+              style={{ width: '100%', padding: '12px 100px 12px 16px', borderRadius: 3, border: '1px solid #E8E8E8', fontSize: 13, fontFamily: 'Syne, sans-serif', color: '#111111', background: '#FFFFFF', outline: 'none', boxSizing: 'border-box' }}
+              onFocus={e => e.target.style.borderColor='#E8352A'}
+              onBlur={e => e.target.style.borderColor='#E8E8E8'}
+            />
+            <button
+              onClick={() => handleAISearch(search)}
+              style={{ position: 'absolute', right: 6, top: '50%', transform: 'translateY(-50%)', background: '#E8352A', color: '#fff', border: 'none', borderRadius: 3, padding: '6px 12px', fontSize: 10, fontWeight: 700, letterSpacing: '1px', textTransform: 'uppercase', cursor: 'pointer', fontFamily: 'Syne, sans-serif' }}
+            >
+              {aiLoading ? '...' : '✦ AI'}
+            </button>
+          </div>
+          {aiSuggestion && (
+            <div style={{ fontSize: 11, color: '#E8352A', fontFamily: 'Syne, sans-serif', marginBottom: 8, padding: '6px 10px', background: 'rgba(232,53,42,0.06)', borderRadius: 3, border: '1px solid rgba(232,53,42,0.18)' }}>
+              ✦ {aiSuggestion}
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
             <select value={category} onChange={e => setCategory(e.target.value)} style={{ flex: 1, minWidth: 140, padding: '8px 10px', borderRadius: 3, border: '1px solid #E8E8E8', fontSize: 11, fontFamily: 'Syne, sans-serif', fontWeight: 700, color: T.textSecondary, background: T.bg, outline: 'none' }}>
               <option value='__all__'>{t('allCategories')}</option>
